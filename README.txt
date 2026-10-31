@@ -49,3 +49,9 @@ WHAT'S NEW IN VERSION 15 (app version 5.1)
 - Section 4 (Loving and Serving): gray icon strip under the title, the strip again under "2) The Four Foundations", and one gray icon under each foundation heading. New files: icon-grp.png, icon-christ.png, icon-home.png, icon-church.png, icon-world.png.
 - Section 4 page breaks: the two parts and each foundation start at the top of a page.
 - The green "section complete" band is now wider (16px) and easier to see.
+
+VERSION 16 (Dropbox fix, app itself unchanged)
+- netlify/functions/approved.mjs now finds the Approved folder on Dropbox team accounts, where your files live in a
+  "home" space. If the first lookup says path/not_found it asks Dropbox for the home space and retries.
+- Only the DROPBOX_APPROVED_PATH variable is needed if your folder is somewhere other than "/LOT App Video Uploads/Approved"
+  inside your own Dropbox space. Do not include "Brad's Dropbox" in the path.

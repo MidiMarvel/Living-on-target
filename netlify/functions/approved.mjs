@@ -27,11 +27,16 @@ async function accessToken(env) {
   return tok.value;
 }
 
-async function api(path, token, body) {
+let goodRoot = ""; // Dropbox namespace that worked last time (team accounts keep your files in a "home" namespace)
+
+async function api(path, token, body, root) {
+  const headers = { authorization: "Bearer " + token };
+  if (body) headers["content-type"] = "application/json";
+  if (root) headers["dropbox-api-path-root"] = JSON.stringify({ ".tag": "namespace_id", namespace_id: root });
   const r = await fetch("https://api.dropboxapi.com/2/" + path, {
     method: "POST",
-    headers: { authorization: "Bearer " + token, "content-type": "application/json" },
-    body: JSON.stringify(body),
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
@@ -62,11 +67,33 @@ export default async (req) => {
   try {
     const token = await accessToken(env);
     const path = env("DROPBOX_APPROVED_PATH") || "/LOT App Video Uploads/Approved";
-    let res = await api("files/list_folder", token, { path, limit: 200 });
-    let entries = res.entries || [];
-    while (res.has_more && entries.length < 1000) {
-      res = await api("files/list_folder/continue", token, { cursor: res.cursor });
-      entries = entries.concat(res.entries || []);
+    const listAll = async (root) => {
+      let res = await api("files/list_folder", token, { path, limit: 200 }, root);
+      let all = res.entries || [];
+      while (res.has_more && all.length < 1000) {
+        res = await api("files/list_folder/continue", token, { cursor: res.cursor }, root);
+        all = all.concat(res.entries || []);
+      }
+      return all;
+    };
+    let entries, root = goodRoot;
+    try {
+      entries = await listAll(root);
+    } catch (first) {
+      // Not found: on team accounts the folder may live in the member's home namespace. Look it up and retry.
+      if (!/not_found/.test(String(first.detail || ""))) throw first;
+      let ids = [];
+      try {
+        const a = await api("users/get_current_account", token, null);
+        const ri = a.root_info || {};
+        ids = [ri.home_namespace_id, ri.root_namespace_id].filter((x) => x && x !== root);
+      } catch (_) { throw first; }
+      let ok = false;
+      for (const id of ids) {
+        try { entries = await listAll(id); root = id; ok = true; break; } catch (_) {}
+      }
+      if (!ok) throw first;
+      goodRoot = root;
     }
     const files = entries
       .filter((e) => e[".tag"] === "file" && EXT.test(e.name))
@@ -76,7 +103,7 @@ export default async (req) => {
       await Promise.all(
         files.map(async (f) => {
           try {
-            const l = await api("files/get_temporary_link", token, { path: f.id });
+            const l = await api("files/get_temporary_link", token, { path: f.id }, root);
             const d = describe(f.name);
             return { id: f.id, title: d.title, by: d.by, date: f.client_modified || "", size: f.size || 0, url: l.link };
           } catch (e) { return null; }
