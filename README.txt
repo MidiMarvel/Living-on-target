@@ -69,3 +69,6 @@ v19: Tell your Story page now shows the Vimeo showcase "LOT Videos" (https://vim
 
 
 v20: four-icon strip moved above the Section 4 title and added to the home page (above the overview text); second strip under "The Four Foundations" removed; each Foundation icon now sits left of its heading; header and home title now read "Module: Discipleship Lifestyle Training" with Module in the logo orange. Changed: index.html and sw.js.
+
+
+v21: "Tell your Story" renamed "God Story Theater" (menu, page title, bookmarks, help text); showcase heading is now "See what’s happening". Changed: index.html, sw.js, netlify/functions/appfaq.mjs.
