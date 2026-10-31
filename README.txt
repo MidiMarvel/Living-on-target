@@ -63,3 +63,6 @@ VERSION 16 (Dropbox fix, app itself unchanged)
   "home" space. If the first lookup says path/not_found it asks Dropbox for the home space and retries.
 - Only the DROPBOX_APPROVED_PATH variable is needed if your folder is somewhere other than "/LOT App Video Uploads/Approved"
   inside your own Dropbox space. Do not include "Brad's Dropbox" in the path.
+
+
+v19: Tell your Story page now shows the Vimeo showcase "LOT Videos" (https://vimeo.com/showcase/12478213) above the Dropbox approved videos. Only index.html and sw.js changed. To change the showcase later, ask Claude to swap the number 12478213.
