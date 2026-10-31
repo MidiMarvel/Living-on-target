@@ -2,6 +2,7 @@
 // Netlify environment variables (all secret):
 //   DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN   (see README)
 //   DROPBOX_APPROVED_PATH   optional, default "/LOT App Video Uploads/Approved"
+//   DROPBOX_DIAG            optional, set to 1 only while troubleshooting (then /api/approved?diag=1 lists top-level folder names)
 // Only this one folder is ever read. Nothing a visitor sends changes which folder is read.
 const EXT = /\.(mp4|mov|m4v|webm)$/i;
 const MAX = 40;
@@ -27,7 +28,7 @@ async function accessToken(env) {
   return tok.value;
 }
 
-let goodRoot = ""; // Dropbox namespace that worked last time (team accounts keep your files in a "home" namespace)
+let goodRoot = "", goodPath = ""; // Dropbox namespace that worked last time (team accounts keep your files in a "home" namespace)
 
 async function api(path, token, body, root) {
   const headers = { authorization: "Bearer " + token };
@@ -67,8 +68,8 @@ export default async (req) => {
   try {
     const token = await accessToken(env);
     const path = env("DROPBOX_APPROVED_PATH") || "/LOT App Video Uploads/Approved";
-    const listAll = async (root) => {
-      let res = await api("files/list_folder", token, { path, limit: 200 }, root);
+    const listAt = async (root, p) => {
+      let res = await api("files/list_folder", token, { path: p, limit: 200 }, root);
       let all = res.entries || [];
       while (res.has_more && all.length < 1000) {
         res = await api("files/list_folder/continue", token, { cursor: res.cursor }, root);
@@ -76,24 +77,46 @@ export default async (req) => {
       }
       return all;
     };
-    let entries, root = goodRoot;
+    let entries, root = goodRoot, at = goodPath || path;
     try {
-      entries = await listAll(root);
+      entries = await listAt(root, at);
     } catch (first) {
-      // Not found: on team accounts the folder may live in the member's home namespace. Look it up and retry.
+      // Not found. On team accounts your folder can live in a "home" space, or inside a top-level folder such as
+      // "Brad's Dropbox". Look around for it once, then remember where it was.
       if (!/not_found/.test(String(first.detail || ""))) throw first;
-      let ids = [];
+      let roots = [""];
       try {
         const a = await api("users/get_current_account", token, null);
         const ri = a.root_info || {};
-        ids = [ri.home_namespace_id, ri.root_namespace_id].filter((x) => x && x !== root);
-      } catch (_) { throw first; }
-      let ok = false;
-      for (const id of ids) {
-        try { entries = await listAll(id); root = id; ok = true; break; } catch (_) {}
+        roots = [...new Set(["", ri.home_namespace_id, ri.root_namespace_id].filter((x) => x !== undefined && x !== null))];
+      } catch (_) {}
+      if (env("DROPBOX_DIAG") === "1" && new URL(req.url).searchParams.get("diag") === "1") {
+        const out = {};
+        for (const r of roots) {
+          try { out[r || "default"] = (await api("files/list_folder", token, { path: "", limit: 100 }, r)).entries.map((e) => e[".tag"] + ":" + e.name); }
+          catch (e) { out[r || "default"] = "error " + (e.detail || e.message); }
+        }
+        return json({ diag: out }, 200, { "cache-control": "no-store" });
       }
-      if (!ok) throw first;
-      goodRoot = root;
+      const tries = [];
+      for (const r of roots) tries.push({ r, p: path });
+      for (const r of roots) {
+        try {
+          const top = (await api("files/list_folder", token, { path: "", limit: 100 }, r)).entries.filter((e) => e[".tag"] === "folder").slice(0, 40);
+          for (const f of top) tries.push({ r, p: f.path_display + path });
+        } catch (_) {}
+      }
+      let found = null;
+      for (let i = 0; i < tries.length && !found; i += 8) {
+        const batch = tries.slice(i, i + 8);
+        const out = await Promise.allSettled(batch.map((t) => listAt(t.r, t.p)));
+        for (let k = 0; k < out.length; k++) {
+          if (out[k].status === "fulfilled") { found = { ...batch[k], entries: out[k].value }; break; }
+        }
+      }
+      if (!found) throw first;
+      entries = found.entries; root = found.r; at = found.p;
+      goodRoot = root; goodPath = at;
     }
     const files = entries
       .filter((e) => e[".tag"] === "file" && EXT.test(e.name))
