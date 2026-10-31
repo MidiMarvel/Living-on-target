@@ -43,3 +43,9 @@ ONE-TIME DROPBOX SETUP
    Optional: DROPBOX_APPROVED_PATH if the folder is not /LOT App Video Uploads/Approved
 7. Deploys, Trigger deploy, Deploy site. Then open https://living-on-target-app.netlify.app/api/approved
    It should show "configured":true and list your videos.
+
+WHAT'S NEW IN VERSION 15 (app version 5.1)
+- Home page overview under the title (English, Spanish, French).
+- Section 4 (Loving and Serving): gray icon strip under the title, the strip again under "2) The Four Foundations", and one gray icon under each foundation heading. New files: icon-grp.png, icon-christ.png, icon-home.png, icon-church.png, icon-world.png.
+- Section 4 page breaks: the two parts and each foundation start at the top of a page.
+- The green "section complete" band is now wider (16px) and easier to see.
