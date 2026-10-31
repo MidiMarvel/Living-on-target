@@ -3,7 +3,7 @@ const DAYS = 90;
 
 export default async () => {
   const getStore = globalThis.__TEST_GET_STORE || (await import("@netlify/blobs")).getStore;
-  const store = getStore("groups");
+  const store = getStore({ name: "groups", consistency: "strong" });
   const { blobs } = await store.list();
   const codes = [...new Set(blobs.map((b) => b.key.split("/")[0]))];
   const cutoff = Date.now() - DAYS * 86400e3;

@@ -17,16 +17,31 @@ const rand = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) =>
 const pad = (n, w) => String(n).padStart(w, "0");
 
 export default async (req) => {
+  const openStore = async () => {
+    const getStore = globalThis.__TEST_GET_STORE || (await import("@netlify/blobs")).getStore;
+    return getStore({ name: "groups", consistency: "strong" });
+  };
+  // Health check: open https://YOUR-SITE/api/group in a browser to see whether storage works.
+  if (req.method === "GET") {
+    try {
+      const st = await openStore();
+      await st.setJSON("health/ping", { t: Date.now() });
+      const back = await st.get("health/ping", { type: "json" });
+      await st.delete("health/ping");
+      return json({ ok: !!back, storage: back ? "working" : "write-not-readable" });
+    } catch (e) {
+      return json({ ok: false, storage: "error", detail: String((e && e.message) || e).slice(0, 200) }, 500);
+    }
+  }
   if (req.method !== "POST") return json({ error: "method" }, 405);
   let body;
   try { body = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
 
   let store;
   try {
-    const getStore = globalThis.__TEST_GET_STORE || (await import("@netlify/blobs")).getStore;
-    store = getStore("groups");
+    store = await openStore();
   } catch (e) {
-    return json({ error: "storage" }, 500);
+    return json({ error: "storage", detail: String((e && e.message) || e).slice(0, 200) }, 500);
   }
 
   const memberRows = async (code) => {
@@ -164,7 +179,7 @@ export default async (req) => {
 
     return json({ error: "bad_op" }, 400);
   } catch (e) {
-    return json({ error: "server" }, 500);
+    return json({ error: "server", detail: String((e && e.message) || e).slice(0, 200) }, 500);
   }
 };
 
