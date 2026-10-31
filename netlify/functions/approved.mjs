@@ -77,6 +77,22 @@ export default async (req) => {
       }
       return all;
     };
+    const segs = path.split("/").filter(Boolean);
+    const leaf = segs.length ? segs[segs.length - 1] : "";
+    const parentName = segs.length > 1 ? segs[segs.length - 2] : leaf;
+    const findByName = async (r) => {
+      const out = [];
+      try {
+        const sr = await api("files/search_v2", token, { query: parentName, options: { filename_only: true, file_status: "active", max_results: 20 } }, r);
+        for (const m of sr.matches || []) {
+          const md = (m.metadata && m.metadata.metadata) || {};
+          if (md[".tag"] === "folder" && String(md.name || "").toLowerCase() === parentName.toLowerCase() && md.path_display) {
+            out.push(segs.length > 1 ? md.path_display + "/" + leaf : md.path_display);
+          }
+        }
+      } catch (_) {}
+      return out;
+    };
     let entries, root = goodRoot, at = goodPath || path;
     try {
       entries = await listAt(root, at);
@@ -93,17 +109,26 @@ export default async (req) => {
       if (env("DROPBOX_DIAG") === "1" && new URL(req.url).searchParams.get("diag") === "1") {
         const out = {};
         for (const r of roots) {
-          try { out[r || "default"] = (await api("files/list_folder", token, { path: "", limit: 100 }, r)).entries.map((e) => e[".tag"] + ":" + e.name); }
-          catch (e) { out[r || "default"] = "error " + (e.detail || e.message); }
+          try {
+            let res = await api("files/list_folder", token, { path: "", limit: 200 }, r);
+            let names = res.entries.map((e) => e[".tag"] + ":" + e.name);
+            let n = 0;
+            while (res.has_more && n++ < 10) { res = await api("files/list_folder/continue", token, { cursor: res.cursor }, r); names = names.concat(res.entries.map((e) => e[".tag"] + ":" + e.name)); }
+            out[r || "default"] = { count: names.length, found: await findByName(r), hasBrad: names.filter((x) => /dropbox/i.test(x)) };
+          } catch (e) { out[r || "default"] = "error " + (e.detail || e.message); }
         }
         return json({ diag: out }, 200, { "cache-control": "no-store" });
       }
       const tries = [];
       for (const r of roots) tries.push({ r, p: path });
+      for (const r of roots) for (const p2 of await findByName(r)) tries.push({ r, p: p2 });
       for (const r of roots) {
         try {
-          const top = (await api("files/list_folder", token, { path: "", limit: 100 }, r)).entries.filter((e) => e[".tag"] === "folder").slice(0, 40);
-          for (const f of top) tries.push({ r, p: f.path_display + path });
+          let res = await api("files/list_folder", token, { path: "", limit: 200 }, r);
+          let top = res.entries;
+          let n = 0;
+          while (res.has_more && n++ < 10) { res = await api("files/list_folder/continue", token, { cursor: res.cursor }, r); top = top.concat(res.entries); }
+          for (const f of top.filter((e) => e[".tag"] === "folder")) if (/dropbox/i.test(f.name)) tries.push({ r, p: f.path_display + path });
         } catch (_) {}
       }
       let found = null;

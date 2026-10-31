@@ -50,6 +50,10 @@ WHAT'S NEW IN VERSION 15 (app version 5.1)
 - Section 4 page breaks: the two parts and each foundation start at the top of a page.
 - The green "section complete" band is now wider (16px) and easier to see.
 
+VERSION 18 (Dropbox: finds the folder by searching for its name; app itself unchanged)
+- If the default path is not found, approved.mjs searches Dropbox for a folder named like the parent in DROPBOX_APPROVED_PATH and remembers where it was found.
+- /api/approved?diag=1 (only while DROPBOX_DIAG=1) now pages through the full list and shows where the folder was found.
+
 VERSION 17 (Dropbox folder search, app itself unchanged)
 - approved.mjs also searches each top-level Dropbox folder (for example "Brad's Dropbox") for the Approved folder and remembers where it was.
 - Troubleshooting only: set DROPBOX_DIAG=1 in Netlify, redeploy, then open /api/approved?diag=1 to see top-level folder names. Remove the variable afterwards.
