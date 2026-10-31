@@ -28,6 +28,8 @@ export default async (req, context) => {
   if (!name) return json({ error: "missing" }, 400);
   const contact = oneLine(b.contact, 120);
   const group = oneLine(b.group, 100) || "Individual";
+  const LN = { es: "Spanish", fr: "French" };
+  const language = LN[b.lang] || "English";
 
   let subject, text;
   if (kind === "answers") {
@@ -35,12 +37,12 @@ export default async (req, context) => {
     const answers = cut(b.answers, 20000);
     if (!answers.trim()) return json({ error: "missing" }, 400);
     subject = `Living On Target answers: ${name}, ${oneLine(b.sectionLabel, 40) || section}`;
-    text = `From: ${name}${contact ? " (" + contact + ")" : ""}\nGroup: ${group}\nSection: ${section}\n\n${answers}\n\n--- Coach chats ---\n${cut(b.chats, 30000) || "(none)"}\n`;
+    text = `From: ${name}${contact ? " (" + contact + ")" : ""}\nGroup: ${group}\nApp language: ${language}\nSection: ${section}\n\n${answers}\n\n--- Coach chats ---\n${cut(b.chats, 30000) || "(none)"}\n`;
   } else {
     const message = cut(b.message, 2000);
     if (!message.trim()) return json({ error: "missing" }, 400);
     subject = `Living On Target message from ${name}`;
-    text = `From: ${name}${contact ? " (" + contact + ")" : " (no contact given)"}\nGroup: ${group}\nWhere in the app: ${oneLine(b.where, 80) || "unknown"}\n\n${message}\n`;
+    text = `From: ${name}${contact ? " (" + contact + ")" : " (no contact given)"}\nGroup: ${group}\nApp language: ${language}\nWhere in the app: ${oneLine(b.where, 80) || "unknown"}\n\n${message}\n`;
   }
 
   try { // best-effort daily limits so the form cannot be used to flood the inbox

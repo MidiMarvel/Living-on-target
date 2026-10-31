@@ -37,12 +37,18 @@ export default async (req, context) => {
     await store.set(kT, String(nT + 1));
   } catch (e) { /* do not block coaching if limits can't be checked */ }
 
+  // The learner may be using the app in Spanish or French; the coach answers in that language.
+  const LANGNAME = { es: "Spanish", fr: "French" };
+  const lang = LANGNAME[body && body.lang] ? body.lang : "";
+  const system = lang ? `Always write your replies in ${LANGNAME[lang]}, even if the instructions or training material are in another language.` : undefined;
+
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({
       model: Netlify.env.get("MODEL") || "claude-sonnet-5-5",
       max_tokens: 400,
+      ...(system ? { system } : {}),
       messages: msgs,
     }),
   });
