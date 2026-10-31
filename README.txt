@@ -66,3 +66,6 @@ VERSION 16 (Dropbox fix, app itself unchanged)
 
 
 v19: Tell your Story page now shows the Vimeo showcase "LOT Videos" (https://vimeo.com/showcase/12478213) above the Dropbox approved videos. Only index.html and sw.js changed. To change the showcase later, ask Claude to swap the number 12478213.
+
+
+v20: four-icon strip moved above the Section 4 title and added to the home page (above the overview text); second strip under "The Four Foundations" removed; each Foundation icon now sits left of its heading; header and home title now read "Module: Discipleship Lifestyle Training" with Module in the logo orange. Changed: index.html and sw.js.
