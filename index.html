@@ -428,6 +428,8 @@ function openPop(id,btn){const was=!$(id).hidden;closePops();if(was)return;const
 $('mC').onclick=e=>{e.stopPropagation();openPop('popC',$('mC'))};
 $('mR').onclick=e=>{e.stopPropagation();openPop('popR',$('mR'))};
 $('mH').onclick=e=>{e.stopPropagation();openPop('popH',$('mH'))};
+/* Chat and Bookmarks: tapping again while already there refreshes the page */
+['mCh','mB'].forEach(id=>$(id).addEventListener('click',e=>{e.preventDefault();closePops();const t=$(id).getAttribute('href');if(location.hash===t)route();else location.hash=t}));
 $('lgb').onclick=e=>{e.stopPropagation();openPop('popL',$('lgb'))};
 document.addEventListener('click',e=>{if(!e.target.closest('.pop'))closePops()});
 function buildLangMenu(){
@@ -770,7 +772,8 @@ function route(){
   stopSpeak();closePops();
   const h=location.hash.slice(1)||'home',[id]=h.split('/');
   syncUI();
-  if(!MODE&&id!=='setup'&&id!=='group'){showScreen(setupHTML());return}
+  /* Before choosing On my own or a group, only the training itself waits for that choice; info pages, Chat and Bookmarks open normally. */
+  if(!MODE&&!['setup','group','group-start','chat','bookmarks','about','settings','startover','videos','network','facilitator','progress'].includes(id)){showScreen(setupHTML());return}
   if(id==='setup'||id==='group-start'){if(id==='group-start'&&!GRP){GT='create';GMSG='';location.hash='#group';return}showScreen(setupHTML())}
   else if(id==='group'){GMSG='';showScreen(groupHTML());if(GRP)beat()}
   else if(id==='bookmarks'){showScreen(bookmarksHTML())}
