@@ -38,7 +38,7 @@ export default async (req, context) => {
   } catch (e) { /* do not block coaching if limits can't be checked */ }
 
   // The learner may be using the app in Spanish or French; the coach answers in that language.
-  const LANGNAME = { es: "Spanish", fr: "French" };
+  const LANGNAME = { es: "Spanish", fr: "French", af: "Afrikaans", am: "Amharic" };
   const lang = LANGNAME[body && body.lang] ? body.lang : "";
   const system = lang ? `Always write your replies in ${LANGNAME[lang]}, even if the instructions or training material are in another language.` : undefined;
 

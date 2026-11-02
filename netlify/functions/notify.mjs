@@ -28,7 +28,7 @@ export default async (req, context) => {
   if (!name) return json({ error: "missing" }, 400);
   const contact = oneLine(b.contact, 120);
   const group = oneLine(b.group, 100) || "Individual";
-  const LN = { es: "Spanish", fr: "French" };
+  const LN = { es: "Spanish", fr: "French", af: "Afrikaans", am: "Amharic" };
   const language = LN[b.lang] || "English";
 
   let subject, text;
