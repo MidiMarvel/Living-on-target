@@ -72,3 +72,6 @@ v20: four-icon strip moved above the Section 4 title and added to the home page 
 
 
 v21: "Tell your Story" renamed "God Story Theater" (menu, page title, bookmarks, help text); showcase heading is now "See what’s happening". Changed: index.html, sw.js, netlify/functions/appfaq.mjs.
+
+
+v22: New Home menu (first button in the top bar) replaces the Chat menu: Home page, On my own or with a group, group threads and Who is here, Start from the beginning, Start over completely. Message the facilitator moved to Resources. Content menu: "Pick up where I left off" at the top, Home entry removed, Questions lines indented with their own check mark (green when all answered) and a rose bar that fills as questions are answered. All dropdown text is bold. Header "Module: Discipleship Lifestyle Training" is one line (shrinks to fit in Spanish and French). Broken sentences from the PDF rejoined in Sections 3 and the Wrap-up (EN/ES/FR) and paragraphs balanced to avoid single dangling words. Question hints: new "Back to my question" button; the phone keyboard is closed before jumping so pages no longer lay out wrongly. Changed: index.html, sw.js, netlify/functions/appfaq.mjs, README.txt.
